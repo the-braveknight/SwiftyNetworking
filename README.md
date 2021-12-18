@@ -8,27 +8,46 @@ Conformance to `Endpoint` protocol is easy and straighforward. This is how the p
 public protocol Endpoint {
     associatedtype Response
     
+    var scheme: Scheme { get }
     var host: String { get }
     var path: String { get }
     var queryItems: [URLQueryItem] { get }
-    var scheme: Scheme { get }
+    var headers: [String : String] { get }
+    var method: Method { get }
+    var contentType: ContentType { get }
+    var accept: ContentType { get }
     func makeRequest() -> URLRequest?
     func parse(_ data: Data) throws -> Response
 }
 ```
-The library also includes default implementations for some of the required variables and functions for convenience. For example, there is a default implementation for **func parse(_ data: Data) throws -> Response ** whenever `Response` conforms to `Decodable` protocol as follows:
+The library includes default implementations for some of the required variables and functions for convenience.
+```swift
+extension Endpoint {
+    var scheme: Scheme { .https }
+    var path: String { "/" }
+    var method : Method { .get }
+    var contentType : ContentType { .json }
+    var headers: [String : String] { [:] }
+    var queryItems: [URLQueryItem] { [] }
+}
+```
+You can easily override any of these default implementations by manually specifying the value for each variable inside the object conforming to `Endpoint`.
+
+There is also is a default implementation for **func makeRequest()** so that most of the time, you will not need to manually specify how the request is created. There is another default implementation for **func parse(_:)** where `Response` conforms to `Decodable` protocol.
 ```swift
 extension Endpoint where Response : Decodable {
+    var accept: ContentType { .json }
+    
     func parse(_ data: Data) throws -> Response {
         let decoder = JSONDecoder()
         return try decoder.decode(Response.self, from: data)
     }
 }
 ```
-You can alternatively provide your own implementation of the function and override this default implementation.
+In such cases, the `accept` variable will also be `.json` by default. You can alternatively provide your own implementation of the **parse(_:)** function as well as `accept` variable and override these default implementations.
 
 ### An Example Endpoint
-This is an example endpoint to parse requests from [Agify.io](https://agify.io/ "Agify.io") API.
+This is an example endpoint with `GET` method to parse requests from [Agify.io](https://agify.io/ "Agify.io") API.
 
 The response body from an API call (https://api.agify.io/?name=bella) looks like this:
 ```json
@@ -53,7 +72,6 @@ struct AgifyAPIEndpoint : Endpoint {
     let scheme: Scheme = .https
     
     let host: String = "api.agify.io"
-    let path: String = "/"
     let queryItems: [URLQueryItem]
     
     init(@ArrayBuilder queryItems: () -> [URLQueryItem]) {
@@ -61,7 +79,7 @@ struct AgifyAPIEndpoint : Endpoint {
     }
 }
 ```
-As you can see from our above example, we did not need to implement **parse(_:) ** by ourselves since we declared that our response will be of type `Person` which conforms to `Decodable` protocol. The initializer also uses **@ArrayBuilder**, which is a result builder included in the library that is used to create arrays in a declarative way.
+As you can see from the above example, we did not need to implement **parse(_:) ** by ourselves because we declared that our response will be of type `Person` which conforms to `Decodable` protocol. And since our endpoint performs a `GET`  request, we also did not need to manually specify a value for `method` variable and relied on the default implementation. The initializer also uses **@ArrayBuilder**, which is a result builder included in the library that is used to create arrays in a declarative way.
 
 We could use the Swift dot syntax to create a convenient way to call our endpoint.
 ```swift
@@ -109,3 +127,4 @@ Task {
 
 ### Credits
 - John Sundell from [SwiftBySundell](https://www.swiftbysundell.com "SwiftBySundell") for the inspiration.
+
