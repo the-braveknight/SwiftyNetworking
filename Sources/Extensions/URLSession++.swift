@@ -31,10 +31,12 @@ public extension URLSession {
     }
 }
 
+#if canImport(Combine)
+import Combine
 
 @available(iOS 13, macOS 10.15, *)
 public extension URLSession {
-    public func load<E : Endpoint>(_ endpoint: E) -> AnyPublisher<E.Response, Error> {
+    func load<E : Endpoint>(_ endpoint: E) -> AnyPublisher<E.Response, Error> {
         guard let request = endpoint.makeRequest() else {
             return Fail<E.Response, Error>(error: URLError(.badURL)).eraseToAnyPublisher()
         }
@@ -44,8 +46,13 @@ public extension URLSession {
             .tryMap(endpoint.parse)
             .eraseToAnyPublisher()
     }
-    
-    public func load<E : Endpoint>(_ endpoint: E) async throws -> E.Response {
+}
+#endif
+
+#if swift(>=5.5)
+@available(iOS 13, macOS 10.15, *)
+public extension URLSession {
+    func load<E : Endpoint>(_ endpoint: E) async throws -> E.Response {
         guard let request = endpoint.makeRequest() else {
             throw URLError(.badURL)
         }
@@ -55,3 +62,4 @@ public extension URLSession {
         return response
     }
 }
+#endif
