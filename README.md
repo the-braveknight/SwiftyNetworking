@@ -96,7 +96,7 @@ let subscription: AnyCancellable = URLSession.shared.load(.estimatedAge(forName:
 ```
 ### Swift Concurrency
 SwiftyNetworking also supports loading an endpoint using Swift Concurrency and `async/await`.
-```
+```swift
 Task {
     do {
         let person = try await URLSession.shared.load(.estimatedAge(forName: "Zaid"))
