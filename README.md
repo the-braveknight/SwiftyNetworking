@@ -1,3 +1,3 @@
 # SwiftyNetworking
 
-A description of this package.
+A lightweight generic networking API written purely in Swift.
