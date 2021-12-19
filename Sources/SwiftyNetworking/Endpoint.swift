@@ -16,23 +16,14 @@ public protocol Endpoint {
     var scheme: Scheme { get }
     var host: String { get }
     var path: String { get }
-    var queryItems: [URLQueryItem] { get }
-    var headers: [String : String] { get }
     var method: Method { get }
-    var contentType: ContentType { get }
-    var accept: ContentType { get }
-    func makeRequest() -> URLRequest?
+    var queryItems: [URLQueryItem] { get }
+    func prepare(request: inout URLRequest)
     func parse(_ data: Data) throws -> Response
 }
 
 public enum Scheme : String {
     case http, https
-}
-
-public enum ContentType : String {
-    case json = "application/json"
-    case xml = "application/xml"
-    case urlencoded = "application/x-www-form-urlencoded"
 }
 
 public enum Method {
@@ -53,50 +44,51 @@ public enum Method {
     }
 }
 
-// MARK: - Default Implementation
+// - MARK: Additional Properties
 public extension Endpoint {
-    var scheme: Scheme { .https }
-    var path: String { "/" }
-    var method : Method { .get }
-    var contentType : ContentType { .json }
-    var headers: [String : String] { [:] }
-    var queryItems: [URLQueryItem] { [] }
-    
-    func makeRequest() -> URLRequest? {
+    var url: URL {
         var components = URLComponents()
         components.scheme = scheme.rawValue
         components.host = host
         components.path = path
         components.queryItems = queryItems.isEmpty ? nil : queryItems
-        
-        // If either the path or the query items passed contained
-        // invalid characters, we'll get a nil URL back:
+
         guard let url = components.url else {
-            return nil
+            fatalError("Invalid URL components: \(components)")
         }
-        
+
+        return url
+    }
+    
+    var request: URLRequest {
         var request = URLRequest(url: url)
         
-        request.httpMethod = method.value
-        
         switch method {
-        case .post(let data), .put(let data): request.httpBody = data
-        default: break
+        case .post(let data), .put(let data):
+            request.httpMethod = method.value
+            request.httpBody = data
+        default:
+            request.httpMethod = method.value
         }
         
-        request.setValue(accept.rawValue, forHTTPHeaderField: "Accept")
-        request.setValue(contentType.rawValue, forHTTPHeaderField: "Content-Type")
-        
-        headers.forEach { key, value in
-            request.setValue(value, forHTTPHeaderField: key)
-        }
+        prepare(request: &request)
         
         return request
     }
 }
 
+// MARK: - Default Implementation
+public extension Endpoint {
+    var scheme: Scheme { .https }
+    var method : Method { .get }
+    var queryItems: [URLQueryItem] { [] }
+    func prepare(request: inout URLRequest) {}
+}
+
 public extension Endpoint where Response : Decodable {
-    var accept: ContentType { .json }
+    func prepare(request: inout URLRequest) {
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+    }
     
     func parse(_ data: Data) throws -> Response {
         let decoder = JSONDecoder()
