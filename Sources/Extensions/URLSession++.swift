@@ -1,6 +1,6 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by Zaid Rahhawi on 12/18/21.
 //
@@ -8,13 +8,9 @@
 import Foundation
 
 public extension URLSession {
-    func load<E: Endpoint>(_ endpoint: E, completionHandler: @escaping (Result<E.Response, Error>) -> Void) {
-        guard let request = endpoint.makeRequest() else {
-            completionHandler(.failure(URLError(.badURL)))
-            return
-        }
-        
-        let task = dataTask(with: request) { data, response, error in
+    @discardableResult
+    func load<E: Endpoint>(_ endpoint: E, completionHandler: @escaping (Result<E.Response, Error>) -> Void) -> URLSessionDataTask {
+        let task = dataTask(with: endpoint.request) { data, response, error in
             if let data = data {
                 do {
                     let response = try endpoint.parse(data)
@@ -28,6 +24,8 @@ public extension URLSession {
         }
         
         task.resume()
+        
+        return task
     }
 }
 
@@ -37,11 +35,7 @@ import Combine
 @available(iOS 13, macOS 10.15, *)
 public extension URLSession {
     func load<E : Endpoint>(_ endpoint: E) -> AnyPublisher<E.Response, Error> {
-        guard let request = endpoint.makeRequest() else {
-            return Fail<E.Response, Error>(error: URLError(.badURL)).eraseToAnyPublisher()
-        }
-        
-        return dataTaskPublisher(for: request)
+        return dataTaskPublisher(for: endpoint.request)
             .map(\.data)
             .tryMap(endpoint.parse)
             .eraseToAnyPublisher()
@@ -53,11 +47,7 @@ public extension URLSession {
 @available(iOS 15, macOS 12, *)
 public extension URLSession {
     func load<E : Endpoint>(_ endpoint: E) async throws -> E.Response {
-        guard let request = endpoint.makeRequest() else {
-            throw URLError(.badURL)
-        }
-        
-        let (data, _) = try await data(for: request)
+        let (data, _) = try await data(for: endpoint.request)
         let response = try endpoint.parse(data)
         return response
     }
