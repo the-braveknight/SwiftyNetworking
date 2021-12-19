@@ -11,32 +11,64 @@ public protocol Endpoint {
     var scheme: Scheme { get }
     var host: String { get }
     var path: String { get }
-    var queryItems: [URLQueryItem] { get }
-    var headers: [String : String] { get }
     var method: Method { get }
-    var contentType: ContentType { get }
-    var accept: ContentType { get }
-    func makeRequest() -> URLRequest?
+    var queryItems: [URLQueryItem] { get }
+    func prepare(request: inout URLRequest)
     func parse(_ data: Data) throws -> Response
 }
 ```
 The library includes default implementations for some of the required variables and functions for convenience.
 ```swift
-extension Endpoint {
+public extension Endpoint {
     var scheme: Scheme { .https }
-    var path: String { "/" }
     var method : Method { .get }
-    var contentType : ContentType { .json }
-    var headers: [String : String] { [:] }
     var queryItems: [URLQueryItem] { [] }
+    func prepare(request: inout URLRequest) {}
 }
 ```
 You can easily override any of these default implementations by manually specifying the value for each variable inside the object conforming to `Endpoint`.
 
-There is also is a default implementation for **func makeRequest()** so that most of the time, you will not need to manually specify how the request is created. There is another default implementation for **func parse(_:)** where `Response` conforms to `Decodable` protocol.
+### Preparing the URLRequest
+Any object conforming to `Endpoint` will automatically get `url` and `request` properites which are not overridable because they are not included in the protocol requirements.
 ```swift
-extension Endpoint where Response : Decodable {
-    var accept: ContentType { .json }
+public extension Endpoint {
+    var url: URL {
+        var components = URLComponents()
+        components.scheme = scheme.rawValue
+        components.host = host
+        components.path = path
+        components.queryItems = queryItems.isEmpty ? nil : queryItems
+
+        guard let url = components.url else {
+            fatalError("Invalid URL components: \(components)")
+        }
+        
+        return url
+    }
+    
+    var request: URLRequest {
+        var request = URLRequest(url: url)
+        
+        switch method {
+        case .post(let data), .put(let data):
+            request.httpMethod = method.value
+            request.httpBody = data
+        default:
+            request.httpMethod = method.value
+        }
+        
+        prepare(request: &request)
+        
+        return request
+    }
+}
+```
+These properties are not meant to be overrided and are not specified in the original protocol body. You can use the **prepare(_:)** function to prepare the request or add any headers before it is loaded. The **prepare(_:)** function is defaultly implemented to do nothing by default because most of the time, you will not need to modify the request. In certain cases, for example when the `Response` conforms to `Decodable` and we expect to decode JSON, it would be reasonable to provide some custom implementations for both **prepare(:_)** and **parse(:_)** functions to handle that.
+```swift
+public extension Endpoint where Response : Decodable {
+    func prepare(request: inout URLRequest) {
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+    }
     
     func parse(_ data: Data) throws -> Response {
         let decoder = JSONDecoder()
@@ -44,7 +76,7 @@ extension Endpoint where Response : Decodable {
     }
 }
 ```
-In such cases, the `accept` variable will also be `.json` by default. You can alternatively provide your own implementation of the **parse(_:)** function as well as `accept` variable and override these default implementations.
+You can still provide your own implementation of these functions override this default implementation.
 
 ### An Example Endpoint
 This is an example endpoint with `GET` method to parse requests from [Agify.io](https://agify.io/ "Agify.io") API.
@@ -69,9 +101,9 @@ Finally, here is how our endpoint will look like:
 ```swift
 struct AgifyAPIEndpoint : Endpoint {
     typealias Response = Person
-    let scheme: Scheme = .https
     
     let host: String = "api.agify.io"
+    let path: String = "/"
     let queryItems: [URLQueryItem]
     
     init(@ArrayBuilder queryItems: () -> [URLQueryItem]) {
