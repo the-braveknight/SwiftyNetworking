@@ -30,7 +30,7 @@ public enum Method {
     case get
     case post(data: Data)
     case put(data: Data)
-    case patch
+    case patch(data: Data)
     case delete
     
     var value: String {
@@ -64,7 +64,7 @@ public extension Endpoint {
         var request = URLRequest(url: url)
         
         switch method {
-        case .post(let data), .put(let data):
+        case .post(let data), .put(let data), .patch(let data):
             request.httpMethod = method.value
             request.httpBody = data
         default:
