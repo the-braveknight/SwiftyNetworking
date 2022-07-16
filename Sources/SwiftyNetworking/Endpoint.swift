@@ -15,7 +15,7 @@ public protocol Endpoint {
     
     var scheme: Scheme { get }
     var host: String { get }
-    var port: Int { get }
+    var port: Int? { get }
     var path: String { get }
     var method: Method { get }
     var queryItems: [URLQueryItem] { get }
@@ -85,7 +85,7 @@ public extension Endpoint {
     var method : Method { .get }
     var queryItems: [URLQueryItem] { [] }
     func prepare(request: inout URLRequest) {}
-    var port: Int { 80 }
+    var port: Int? { nil }
 }
 
 public extension Endpoint where Response : Decodable {
