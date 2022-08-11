@@ -10,6 +10,7 @@ public protocol Endpoint {
     
     var scheme: Scheme { get }
     var host: String { get }
+    var port: Int? { get }
     var path: String { get }
     var method: Method { get }
     var queryItems: [URLQueryItem] { get }
@@ -24,6 +25,7 @@ public extension Endpoint {
     var method : Method { .get }
     var queryItems: [URLQueryItem] { [] }
     func prepare(request: inout URLRequest) {}
+    var port: Int? { nil }
 }
 ```
 You can easily override any of these default implementations by manually specifying the value for each variable inside the object conforming to `Endpoint`.
@@ -37,6 +39,7 @@ public extension Endpoint {
         components.scheme = scheme.rawValue
         components.host = host
         components.path = path
+        components.port = port
         components.queryItems = queryItems.isEmpty ? nil : queryItems
 
         guard let url = components.url else {
