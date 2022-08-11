@@ -97,7 +97,6 @@ A custom Swift struct that can contain this data would look like this:
 struct Person : Decodable {
     let name: String
     let age: Int
-    let count: Int
 }
 ```
 Finally, here is how our endpoint will look like:

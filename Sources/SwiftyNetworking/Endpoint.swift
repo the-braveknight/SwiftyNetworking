@@ -6,7 +6,6 @@
 //  Inspired by https://www.swiftbysundell.com/articles/creating-generic-networking-apis-in-swift/
 
 import Foundation
-import Combine
 
 // MARK: - Endpoint Protocol
 /// Endpoint protocol
@@ -20,7 +19,7 @@ public protocol Endpoint {
     var method: HTTPMethod { get }
     var queryItems: [URLQueryItem] { get }
     func prepare(request: inout URLRequest)
-    func parse(_ data: Data) throws -> Response
+    func parse(data: Data, urlResponse: URLResponse) throws -> Response
 }
 
 public enum Scheme : String {
@@ -65,12 +64,13 @@ public extension Endpoint {
     var request: URLRequest {
         var request = URLRequest(url: url)
         
+        request.httpMethod = method.value
+        
         switch method {
         case .post(let data), .put(let data), .patch(let data):
-            request.httpMethod = method.value
             request.httpBody = data
         default:
-            request.httpMethod = method.value
+            break
         }
         
         prepare(request: &request)
@@ -92,9 +92,15 @@ public extension Endpoint where Response : Decodable {
     func prepare(request: inout URLRequest) {
         request.addValue("application/json", forHTTPHeaderField: "Accept")
     }
-    
-    func parse(_ data: Data) throws -> Response {
+
+    func parse(data: Data, urlResponse: URLResponse) throws -> Response {
         let decoder = JSONDecoder()
         return try decoder.decode(Response.self, from: data)
+    }
+}
+
+public extension Endpoint where Response == URLResponse {
+    func parse(data: Data, urlResponse: URLResponse) throws -> Response {
+        return urlResponse
     }
 }
