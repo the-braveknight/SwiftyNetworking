@@ -12,7 +12,7 @@ public protocol Endpoint {
     var host: String { get }
     var port: Int? { get }
     var path: String { get }
-    var method: Method { get }
+    var method: HTTPMethod { get }
     var queryItems: [URLQueryItem] { get }
     func prepare(request: inout URLRequest)
     func parse(_ data: Data) throws -> Response
@@ -22,7 +22,7 @@ The library includes default implementations for some of the required variables 
 ```swift
 public extension Endpoint {
     var scheme: Scheme { .https }
-    var method : Method { .get }
+    var method : HTTPMethod { .get }
     var queryItems: [URLQueryItem] { [] }
     func prepare(request: inout URLRequest) {}
     var port: Int? { nil }

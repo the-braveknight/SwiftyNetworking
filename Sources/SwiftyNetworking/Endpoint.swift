@@ -17,7 +17,7 @@ public protocol Endpoint {
     var host: String { get }
     var port: Int? { get }
     var path: String { get }
-    var method: Method { get }
+    var method: HTTPMethod { get }
     var queryItems: [URLQueryItem] { get }
     func prepare(request: inout URLRequest)
     func parse(_ data: Data) throws -> Response
@@ -27,7 +27,7 @@ public enum Scheme : String {
     case http, https
 }
 
-public enum Method {
+public enum HTTPMethod {
     case get
     case post(data: Data)
     case put(data: Data)
@@ -82,7 +82,7 @@ public extension Endpoint {
 // MARK: - Default Implementation
 public extension Endpoint {
     var scheme: Scheme { .https }
-    var method : Method { .get }
+    var method : HTTPMethod { .get }
     var queryItems: [URLQueryItem] { [] }
     func prepare(request: inout URLRequest) {}
     var port: Int? { nil }
