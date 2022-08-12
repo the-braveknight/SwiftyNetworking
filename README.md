@@ -52,12 +52,13 @@ public extension Endpoint {
     var request: URLRequest {
         var request = URLRequest(url: url)
         
+        request.httpMethod = method.value
+        
         switch method {
-        case .post(let data), .put(let data):
-            request.httpMethod = method.value
+        case .post(let data), .put(let data), .patch(let data):
             request.httpBody = data
         default:
-            request.httpMethod = method.value
+            break
         }
         
         prepare(request: &request)
