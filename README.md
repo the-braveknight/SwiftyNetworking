@@ -15,7 +15,7 @@ public protocol Endpoint {
     var method: HTTPMethod { get }
     var queryItems: [URLQueryItem] { get }
     func prepare(request: inout URLRequest)
-    func parse(_ data: Data) throws -> Response
+    func parse(data: Data, urlResponse: URLResponse) throws -> Response
 }
 ```
 The library includes default implementations for some of the required variables and functions for convenience.
@@ -66,14 +66,14 @@ public extension Endpoint {
     }
 }
 ```
-These properties are not meant to be overrided and are not specified in the original protocol body. You can use the **prepare(_:)** function to prepare the request or add any headers before it is loaded. The **prepare(_:)** function is defaultly implemented to do nothing by default because most of the time, you will not need to modify the request. In certain cases, for example when the `Response` conforms to `Decodable` and we expect to decode JSON, it would be reasonable to provide some custom implementations for both **prepare(:_)** and **parse(:_)** functions to handle that.
+These properties are not meant to be overrided and are not specified in the original protocol body. You can use the **prepare(_:)** function to prepare the request or add any headers before it is loaded. The **prepare(_:)** function is defaultly implemented to do nothing by default because most of the time, you will not need to modify the request. In certain cases, for example when the `Response` conforms to `Decodable` and we expect to decode JSON, it would be reasonable to provide some custom implementations for both **prepare(_:)** and **parse(_,_:)** functions to handle that.
 ```swift
 public extension Endpoint where Response : Decodable {
     func prepare(request: inout URLRequest) {
         request.addValue("application/json", forHTTPHeaderField: "Accept")
     }
     
-    func parse(_ data: Data) throws -> Response {
+    func parse(data: Data, urlResponse: URLResponse) throws -> Response {
         let decoder = JSONDecoder()
         return try decoder.decode(Response.self, from: data)
     }
@@ -113,7 +113,7 @@ struct AgifyAPIEndpoint : Endpoint {
     }
 }
 ```
-As you can see from the above example, we did not need to implement **parse(_:) ** by ourselves because we declared that our response will be of type `Person` which conforms to `Decodable` protocol. And since our endpoint performs a `GET`  request, we also did not need to manually specify a value for `method` variable and relied on the default implementation. The initializer also uses **@ArrayBuilder**, which is a result builder included in the library that is used to create arrays in a declarative way.
+As you can see from the above example, we did not need to implement **parse(_, _:) ** by ourselves because we declared that our response will be of type `Person` which conforms to `Decodable` protocol. And since our endpoint performs a `GET`  request, we also did not need to manually specify a value for `method` variable and relied on the default implementation. The initializer also uses **@ArrayBuilder**, which is a result builder included in the library that is used to create arrays in a declarative way.
 
 We could use the Swift dot syntax to create a convenient way to call our endpoint.
 ```swift
