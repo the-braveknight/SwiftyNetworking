@@ -43,7 +43,7 @@ public struct Accept : HTTPHeader {
         self.mimeType = mimeType
     }
     
-    public let field: String = String(describing: Self.self)
+    public let field: String = "Accept"
     public var value: String { mimeType.rawValue }
 }
 
@@ -54,7 +54,7 @@ public struct ContentType : HTTPHeader {
         self.mimeType = mimeType
     }
     
-    public let field: String = String(describing: Self.self)
+    public let field: String = "Content-Type"
     public var value: String { mimeType.rawValue }
 }
 
