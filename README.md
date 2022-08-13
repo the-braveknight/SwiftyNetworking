@@ -3,7 +3,7 @@
 SwiftyNetworking library is a generic networking library written in Swift that provides a protocol-oriented approach to load requests. It provides a protocol `Endpoint` to parse networking requests in a generic and type-safe way.
 
 #### Endpoint Protocol
-Conformance to `Endpoint` protocol is easy and straighforward. This is how the protocol looks like:
+Conformance to `Endpoint` protocol is easy and straighforward. This is how the protocol body looks like:
 ```swift
 public protocol Endpoint {
     associatedtype Response
@@ -14,24 +14,27 @@ public protocol Endpoint {
     var path: String { get }
     var method: HTTPMethod { get }
     var queryItems: [URLQueryItem] { get }
+    var headers: [HTTPHeader] { get }
     func prepare(request: inout URLRequest)
     func parse(data: Data, urlResponse: URLResponse) throws -> Response
 }
+
 ```
 The library includes default implementations for some of the required variables and functions for convenience.
 ```swift
 public extension Endpoint {
     var scheme: Scheme { .https }
+    var port: Int? { nil }
     var method : HTTPMethod { .get }
     var queryItems: [URLQueryItem] { [] }
+    var headers: [HTTPHeader] { [] }
     func prepare(request: inout URLRequest) {}
-    var port: Int? { nil }
 }
 ```
 You can easily override any of these default implementations by manually specifying the value for each variable inside the object conforming to `Endpoint`.
 
 ### Preparing the URLRequest
-Any object conforming to `Endpoint` will automatically get `url` and `request` properites which are not overridable because they are not included in the protocol requirements.
+Any object conforming to `Endpoint` will automatically get `url` and `request` properites which are not overridable since they are not included in the protocol requirements.
 ```swift
 public extension Endpoint {
     var url: URL {
@@ -45,7 +48,7 @@ public extension Endpoint {
         guard let url = components.url else {
             fatalError("Invalid URL components: \(components)")
         }
-        
+
         return url
     }
     
@@ -61,26 +64,28 @@ public extension Endpoint {
             break
         }
         
+        headers.forEach { header in
+            request.addValue(header.value, forHTTPHeaderField: header.field)
+        }
+        
         prepare(request: &request)
         
         return request
     }
 }
 ```
-These properties are not meant to be overrided and are not specified in the original protocol body. You can use the **prepare(_:)** function to prepare the request or add any headers before it is loaded. The **prepare(_:)** function is defaultly implemented to do nothing by default because most of the time, you will not need to modify the request. In certain cases, for example when the `Response` conforms to `Decodable` and we expect to decode JSON, it would be reasonable to provide some custom implementations for both **prepare(_:)** and **parse(_,_:)** functions to handle that.
+These properties are not meant to be overridden and are not specified in the original protocol body. You can implement the **prepare(request:)** method if you need to modify the request before it is loaded.
+
+In certain cases, for example when the `Response` conforms to `Decodable` and we expect to decode JSON, it would be reasonable to provide custom implementation for **parse(data:urlResponse:)** method to handle that.
 ```swift
 public extension Endpoint where Response : Decodable {
-    func prepare(request: inout URLRequest) {
-        request.addValue("application/json", forHTTPHeaderField: "Accept")
-    }
-    
     func parse(data: Data, urlResponse: URLResponse) throws -> Response {
         let decoder = JSONDecoder()
         return try decoder.decode(Response.self, from: data)
     }
 }
 ```
-You can still provide your own implementation of these functions override this default implementation.
+You can still provide your own implementation of this method to override this default implementation.
 
 ### An Example Endpoint
 This is an example endpoint with `GET` method to parse requests from [Agify.io](https://agify.io/ "Agify.io") API.
@@ -114,7 +119,7 @@ struct AgifyAPIEndpoint : Endpoint {
     }
 }
 ```
-As you can see from the above example, we did not need to implement **parse(_, _:) ** by ourselves because we declared that our response will be of type `Person` which conforms to `Decodable` protocol. And since our endpoint performs a `GET`  request, we also did not need to manually specify a value for `method` variable and relied on the default implementation. The initializer also uses **@ArrayBuilder**, which is a result builder included in the library that is used to create arrays in a declarative way.
+As you can see from the above example, we did not need to implement **parse(data:urlResponse:)** by ourselves because we declared that our response will be of type `Person` which conforms to `Decodable` protocol. And since our endpoint performs a `GET`  request, we also did not need to manually implement `method` variable and relied on the default implementation. The initializer also uses **@ArrayBuilder**, which is a result builder included in the library that is used to create arrays in a declarative way.
 
 We could use the Swift dot syntax to create a convenient way to call our endpoint.
 ```swift

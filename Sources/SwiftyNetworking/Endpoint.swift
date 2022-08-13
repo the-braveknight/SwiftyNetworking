@@ -18,30 +18,9 @@ public protocol Endpoint {
     var path: String { get }
     var method: HTTPMethod { get }
     var queryItems: [URLQueryItem] { get }
+    var headers: [HTTPHeader] { get }
     func prepare(request: inout URLRequest)
     func parse(data: Data, urlResponse: URLResponse) throws -> Response
-}
-
-public enum Scheme : String {
-    case http, https
-}
-
-public enum HTTPMethod {
-    case get
-    case post(data: Data)
-    case put(data: Data)
-    case patch(data: Data)
-    case delete
-    
-    var value: String {
-        switch self {
-        case .get: return "GET"
-        case .post: return "POST"
-        case .put: return "PUT"
-        case .patch: return "PATCH"
-        case .delete: return "DELETE"
-        }
-    }
 }
 
 // - MARK: Additional Properties
@@ -73,6 +52,10 @@ public extension Endpoint {
             break
         }
         
+        headers.forEach { header in
+            request.addValue(header.value, forHTTPHeaderField: header.field)
+        }
+        
         prepare(request: &request)
         
         return request
@@ -82,17 +65,14 @@ public extension Endpoint {
 // MARK: - Default Implementation
 public extension Endpoint {
     var scheme: Scheme { .https }
+    var port: Int? { nil }
     var method : HTTPMethod { .get }
     var queryItems: [URLQueryItem] { [] }
+    var headers: [HTTPHeader] { [] }
     func prepare(request: inout URLRequest) {}
-    var port: Int? { nil }
 }
 
 public extension Endpoint where Response : Decodable {
-    func prepare(request: inout URLRequest) {
-        request.addValue("application/json", forHTTPHeaderField: "Accept")
-    }
-
     func parse(data: Data, urlResponse: URLResponse) throws -> Response {
         let decoder = JSONDecoder()
         return try decoder.decode(Response.self, from: data)
@@ -103,4 +83,30 @@ public extension Endpoint where Response == URLResponse {
     func parse(data: Data, urlResponse: URLResponse) throws -> Response {
         return urlResponse
     }
+}
+
+struct AnyEndpoint<Response: Decodable>: Endpoint {
+    var host: String
+    var path: String
+    var method: HTTPMethod
+    var queryItems: [URLQueryItem]
+    var headers: [HTTPHeader]
+    
+    init(host: String, path: String, method: HTTPMethod, @ArrayBuilder queryItems: () ->  [URLQueryItem], @ArrayBuilder headers: () -> [HTTPHeader]) {
+        self.host = host
+        self.path = path
+        self.method = method
+        self.queryItems = queryItems()
+        self.headers = headers()
+    }
+}
+
+let x = AnyEndpoint<String>(host: "", path: "", method: .get) {
+    URLQueryItem(name: "ef", value: "efef")
+} headers: {
+    if Bool.random() {
+        Auth.bearer(token: "wdwd") as HTTPHeader
+    }
+    
+    ContentType(.json) as HTTPHeader
 }
