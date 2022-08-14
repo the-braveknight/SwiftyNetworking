@@ -84,29 +84,3 @@ public extension Endpoint where Response == URLResponse {
         return urlResponse
     }
 }
-
-struct AnyEndpoint<Response: Decodable>: Endpoint {
-    var host: String
-    var path: String
-    var method: HTTPMethod
-    var queryItems: [URLQueryItem]
-    var headers: [HTTPHeader]
-    
-    init(host: String, path: String, method: HTTPMethod, @ArrayBuilder queryItems: () ->  [URLQueryItem], @ArrayBuilder headers: () -> [HTTPHeader]) {
-        self.host = host
-        self.path = path
-        self.method = method
-        self.queryItems = queryItems()
-        self.headers = headers()
-    }
-}
-
-let x = AnyEndpoint<String>(host: "", path: "", method: .get) {
-    URLQueryItem(name: "ef", value: "efef")
-} headers: {
-    if Bool.random() {
-        Auth.bearer(token: "wdwd") as HTTPHeader
-    }
-    
-    ContentType(.json) as HTTPHeader
-}
