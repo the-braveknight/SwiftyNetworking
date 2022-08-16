@@ -46,9 +46,10 @@ public extension URLSession {
         return dataTaskPublisher(for: endpoint.request)
     }
     
-    func load<E : Endpoint>(_ endpoint: E) -> some Publisher<E.Response, Error> {
+    func load<E : Endpoint>(_ endpoint: E) -> AnyPublisher<E.Response, Error> {
         return dataTaskPublisher(for: endpoint.request)
             .tryMap(endpoint.parse)
+            .eraseToAnyPublisher()
     }
 }
 #endif
