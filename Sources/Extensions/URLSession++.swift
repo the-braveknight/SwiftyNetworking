@@ -54,7 +54,7 @@ public extension URLSession {
 #endif
 
 #if swift(>=5.5)
-@available(iOS 13, macOS 10.15, *)
+@available(iOS 15, macOS 12, *)
 public extension URLSession {
     func load<E : Endpoint>(_ endpoint: E) async throws -> (Data, URLResponse) {
         return try await data(for: endpoint.request)
