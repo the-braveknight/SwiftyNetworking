@@ -114,12 +114,12 @@ struct AgifyAPIEndpoint : Endpoint {
     let path: String = "/"
     let queryItems: [URLQueryItem]
     
-    init(@ArrayBuilder queryItems: () -> [URLQueryItem]) {
+    init(@QueriesBuilder queryItems: () -> [URLQueryItem]) {
         self.queryItems = queryItems()
     }
 }
 ```
-As you can see from the above example, we did not need to implement **parse(data:urlResponse:)** by ourselves because we declared that our response will be of type `Person` which conforms to `Decodable` protocol. And since our endpoint performs a `GET`  request, we also did not need to manually implement `method` variable and relied on the default implementation. The initializer also uses **@ArrayBuilder**, which is a result builder included in the library that is used to create arrays in a declarative way.
+As you can see from the above example, we did not need to implement **parse(data:urlResponse:)** by ourselves because we declared that our response will be of type `Person` which conforms to `Decodable` protocol. And since our endpoint performs a `GET`  request, we also did not need to manually implement `method` variable and relied on the default implementation. The initializer also uses **@ArrayBuilder<Element>**, which is a generic result builder included in the library that is used to create arrays in a declarative way. **@QueriesBuilder** and **@HeadersBuilder** are convenient typealiases for **@ArrayBuilder<URLQueryItem>** and **@ArrayBuilder<HTTPHeader>** respectively.
 
 We could use the Swift dot syntax to create a convenient way to call our endpoint.
 ```swift
