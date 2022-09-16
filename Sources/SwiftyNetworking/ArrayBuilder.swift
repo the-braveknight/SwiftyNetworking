@@ -8,28 +8,31 @@
 import Foundation
 
 @resultBuilder
-public struct ArrayBuilder {
-    public static func buildExpression<Item>(_ element: Item) -> [Item] {
+public enum ArrayBuilder<Element> {
+    public static func buildExpression(_ element: Element) -> [Element] {
         return [element]
     }
     
-    public static func buildOptional<Item>(_ component: [Item]?) -> [Item] {
+    public static func buildOptional(_ component: [Element]?) -> [Element] {
         return component ?? []
     }
     
-    public static func buildEither<Item>(first component: [Item]) -> [Item] {
+    public static func buildEither(first component: [Element]) -> [Element] {
         return component
     }
     
-    public static func buildEither<Item>(second component: [Item]) -> [Item] {
+    public static func buildEither(second component: [Element]) -> [Element] {
         return component
     }
     
-    public static func buildArray<Item>(_ components: [[Item]]) -> [Item] {
+    public static func buildArray(_ components: [[Element]]) -> [Element] {
         return Array(components.joined())
     }
     
-    public static func buildBlock<Item>(_ components: [Item]...) -> [Item] {
+    public static func buildBlock(_ components: [Element]...) -> [Element] {
         return Array(components.joined())
     }
 }
+
+public typealias QueriesBuilder = ArrayBuilder<URLQueryItem>
+public typealias HeadersBuilder = ArrayBuilder<HTTPHeader>
