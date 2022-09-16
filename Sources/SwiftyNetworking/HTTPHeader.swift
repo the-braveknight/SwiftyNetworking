@@ -61,6 +61,11 @@ public struct ContentType : HTTPHeader {
 public struct Header : HTTPHeader {
     public let field: String
     public let value: String
+    
+    public init(field: String, value: String) {
+        self.field = field
+        self.value = value
+    }
 }
 
 public extension URLRequest {

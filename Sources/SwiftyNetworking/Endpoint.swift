@@ -53,7 +53,7 @@ public extension Endpoint {
         }
         
         headers.forEach { header in
-            request.addValue(header.value, forHTTPHeaderField: header.field)
+            request.addHeader(header)
         }
         
         prepare(request: &request)
