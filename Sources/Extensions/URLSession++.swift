@@ -9,7 +9,7 @@ import Foundation
 
 public extension URLSession {
     @discardableResult
-    func load<E : Endpoint>(_ endopoint: E, completionHandler: @escaping (Result<(Data, URLResponse), Error>) -> Void) -> URLSessionDataTask {
+    internal func load<E : Endpoint>(_ endopoint: E, completionHandler: @escaping (Result<(Data, URLResponse), Error>) -> Void) -> URLSessionDataTask {
         let task = dataTask(with: endopoint.request) { data, response, error in
             if let data = data, let response = response {
                 completionHandler(.success((data, response)))
@@ -42,7 +42,7 @@ import Combine
 
 @available(iOS 13, macOS 10.15, *)
 public extension URLSession {
-    func load<E : Endpoint>(_ endpoint: E) -> DataTaskPublisher {
+    internal func load<E : Endpoint>(_ endpoint: E) -> DataTaskPublisher {
         return dataTaskPublisher(for: endpoint.request)
     }
     
@@ -57,7 +57,7 @@ public extension URLSession {
 #if swift(>=5.5)
 @available(iOS 15, macOS 12, *)
 public extension URLSession {
-    func load<E : Endpoint>(_ endpoint: E) async throws -> (Data, URLResponse) {
+    internal func load<E : Endpoint>(_ endpoint: E) async throws -> (Data, URLResponse) {
         return try await data(for: endpoint.request)
     }
     
