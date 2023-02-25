@@ -25,13 +25,25 @@ public protocol Endpoint {
 
 // - MARK: Additional Properties
 public extension Endpoint {
+    /// All queries marked with @Query property wrapper.
+    var mirroredQueries: [URLQueryItem] {
+        let mirror = Mirror(reflecting: self)
+        return mirror.children.compactMap { $0.value as? Query }.map(\.urlQueryItem)
+    }
+    
+    /// All headers marked with @Header property wrapper.
+    var mirroredHeaders: [HTTPHeader] {
+        let mirror = Mirror(reflecting: self)
+        return mirror.children.compactMap { $0.value as? HTTPHeader }
+    }
+    
     var url: URL {
         var components = URLComponents()
         components.scheme = scheme.rawValue
         components.host = host
         components.path = path
         components.port = port
-        components.queryItems = queryItems.isEmpty ? nil : queryItems
+        components.queryItems = queryItems + mirroredQueries
 
         guard let url = components.url else {
             fatalError("Invalid URL components: \(components)")
@@ -53,7 +65,11 @@ public extension Endpoint {
         }
         
         headers.forEach { header in
-            request.addHeader(header)
+            request.addValue(header.value, forHTTPHeaderField: header.field)
+        }
+        
+        mirroredHeaders.forEach { header in
+            request.addValue(header.value, forHTTPHeaderField: header.field)
         }
         
         prepare(request: &request)
